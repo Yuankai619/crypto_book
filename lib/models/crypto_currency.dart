@@ -6,6 +6,7 @@ class CryptoCurrency {
   final double currentPrice;
   final double marketCap;
   final int? marketCapRank;
+  final double? priceChangePercentage24h;
   final String? description;
   final List<String>? categories;
   final Map<String, dynamic>? links;
@@ -20,6 +21,7 @@ class CryptoCurrency {
     required this.currentPrice,
     required this.marketCap,
     this.marketCapRank,
+    this.priceChangePercentage24h,
     this.description,
     this.categories,
     this.links,
@@ -36,6 +38,8 @@ class CryptoCurrency {
       currentPrice: (json['current_price'] ?? 0).toDouble(),
       marketCap: (json['market_cap'] ?? 0).toDouble(),
       marketCapRank: json['market_cap_rank'],
+      priceChangePercentage24h:
+          (json['price_change_percentage_24h'] ?? 0).toDouble(),
     );
   }
 
@@ -43,6 +47,13 @@ class CryptoCurrency {
     var description = '';
     if (json['description'] != null && json['description']['en'] != null) {
       description = json['description']['en'];
+    }
+
+    var priceChangePercentage24h = 0.0;
+    if (json['market_data'] != null &&
+        json['market_data']['price_change_percentage_24h'] != null) {
+      priceChangePercentage24h =
+          json['market_data']['price_change_percentage_24h'].toDouble();
     }
 
     return CryptoCurrency(
@@ -54,6 +65,7 @@ class CryptoCurrency {
           json['market_data']?['current_price']?['usd']?.toDouble() ?? 0,
       marketCap: json['market_data']?['market_cap']?['usd']?.toDouble() ?? 0,
       marketCapRank: json['market_cap_rank'],
+      priceChangePercentage24h: priceChangePercentage24h,
       description: description,
       categories:
           json['categories'] != null

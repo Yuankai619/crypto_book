@@ -31,7 +31,24 @@ class HomePageState extends State<HomePage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('幣冊'),
+          centerTitle: true,
+          title: Row(
+            mainAxisSize:
+                MainAxisSize
+                    .min, // This makes the Row take only as much space as needed
+            children: [
+              Image.asset(
+                'assets/image/crypto_book_appbar_icon.png',
+                height: 34,
+                width: 34,
+              ),
+              SizedBox(width: 8), // Space between icon and text
+              Text(
+                '幣冊',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
           bottom: TabBar(tabs: [Tab(text: '全部'), Tab(text: '類別')]),
         ),
         body: TabBarView(

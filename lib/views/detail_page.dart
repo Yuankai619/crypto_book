@@ -213,7 +213,7 @@ class DetailPageState extends State<DetailPage> {
                 categories.map((category) {
                   return Chip(
                     label: Text(category),
-                    backgroundColor: Colors.grey[800],
+                    backgroundColor: const Color.fromARGB(255, 46, 35, 49),
                   );
                 }).toList(),
           ),

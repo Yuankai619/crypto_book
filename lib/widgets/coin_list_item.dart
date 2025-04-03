@@ -10,14 +10,15 @@ class CoinListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: EdgeInsets.zero, // Remove margin to eliminate spacing
+      elevation: 0.5, // Reduce elevation for a flatter look
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero, // Remove border radius
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
           child: Row(
             children: [
               ClipRRect(
@@ -59,9 +60,17 @@ class CoinListItem extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 4),
+                  // Display price change percentage with color
                   Text(
-                    'Market Cap: US\$${_formatMarketCap(coin.marketCap)}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                    '${coin.priceChangePercentage24h?.toStringAsFixed(2) ?? "0.00"}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color:
+                          (coin.priceChangePercentage24h ?? 0) >= 0
+                              ? Colors.green
+                              : Colors.red,
+                    ),
                   ),
                 ],
               ),
@@ -70,17 +79,5 @@ class CoinListItem extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatMarketCap(double marketCap) {
-    if (marketCap >= 1000000000) {
-      return '${(marketCap / 1000000000).toStringAsFixed(2)}B';
-    } else if (marketCap >= 1000000) {
-      return '${(marketCap / 1000000).toStringAsFixed(2)}M';
-    } else if (marketCap >= 1000) {
-      return '${(marketCap / 1000).toStringAsFixed(2)}K';
-    } else {
-      return marketCap.toString();
-    }
   }
 }

@@ -39,7 +39,12 @@ class CategoryGridItem extends StatelessWidget {
                         child: CircleAvatar(
                           radius: 15,
                           backgroundImage: NetworkImage(url),
-                          backgroundColor: Colors.grey[800],
+                          backgroundColor: const Color.fromARGB(
+                            255,
+                            66,
+                            66,
+                            66,
+                          ),
                           onBackgroundImageError: (_, __) {},
                         ),
                       );
