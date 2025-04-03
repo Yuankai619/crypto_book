@@ -38,7 +38,7 @@ class CryptoCard extends StatelessWidget {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    crypto.description,
+                    crypto.description ?? '',
                     style: TextStyle(fontSize: 12, color: Colors.grey[400]),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

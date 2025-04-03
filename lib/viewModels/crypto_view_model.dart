@@ -1,63 +1,75 @@
-import 'dart:convert';
-import 'dart:math';
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import '../models/crypto_currency.dart';
+import '../models/category.dart';
+import '../services/api_service.dart';
 
-class CryptoViewModel {
-  List<CryptoCurrency> mainstream = [];
-  List<CryptoCurrency> stablecoins = [];
-  List<CryptoCurrency> memecoins = [];
-  bool isLoading = false;
-  String? error;
+class CryptoViewModel extends ChangeNotifier {
+  final ApiService _apiService = ApiService();
 
-  Future<void> loadData() async {
+  List<CryptoCurrency> coins = [];
+  List<Category> categories = [];
+
+  bool isLoadingCoins = false;
+  bool isLoadingCategories = false;
+  bool isLoadingCoinDetails = false;
+
+  String? errorCoins;
+  String? errorCategories;
+  String? errorCoinDetails;
+
+  CryptoCurrency? selectedCoin;
+
+  Future<void> loadCoins() async {
     try {
-      isLoading = true;
-      error = null;
+      isLoadingCoins = true;
+      errorCoins = null;
+      notifyListeners();
 
-      final String response = await rootBundle.loadString(
-        'assets/data/crypto_data.json',
-      );
-      print(
-        'JSON loaded: ${response.substring(0, min(100, response.length))}...',
-      );
-
-      final data = json.decode(response);
-
-      if (data['mainstream'] == null) {
-        throw Exception("Missing 'mainstream' key in JSON data");
-      }
-      if (data['stablecoins'] == null) {
-        throw Exception("Missing 'stablecoins' key in JSON data");
-      }
-      if (data['memecoins'] == null) {
-        throw Exception("Missing 'memecoins' key in JSON data");
-      }
-
-      mainstream =
-          (data['mainstream'] as List)
-              .map((i) => CryptoCurrency.fromJson(i))
-              .toList();
-
-      stablecoins =
-          (data['stablecoins'] as List)
-              .map((i) => CryptoCurrency.fromJson(i))
-              .toList();
-
-      memecoins =
-          (data['memecoins'] as List)
-              .map((i) => CryptoCurrency.fromJson(i))
-              .toList();
-
-      print('Data loaded successfully:');
-      print('Mainstream coins: ${mainstream.length}');
-      print('Stablecoins: ${stablecoins.length}');
-      print('Memecoins: ${memecoins.length}');
+      coins = await _apiService.getCoins();
     } catch (e) {
-      error = e.toString();
-      print('Error loading data: $error');
+      errorCoins = e.toString();
     } finally {
-      isLoading = false;
+      isLoadingCoins = false;
+      notifyListeners();
     }
+  }
+
+  Future<void> loadCategories() async {
+    try {
+      isLoadingCategories = true;
+      errorCategories = null;
+      notifyListeners();
+
+      categories = await _apiService.getCategories();
+    } catch (e) {
+      errorCategories = e.toString();
+    } finally {
+      isLoadingCategories = false;
+      notifyListeners();
+    }
+  }
+
+  Future<CryptoCurrency> getCoinDetails(String id) async {
+    try {
+      isLoadingCoinDetails = true;
+      errorCoinDetails = null;
+      notifyListeners();
+
+      selectedCoin = await _apiService.getCoinDetails(id);
+      return selectedCoin!;
+    } catch (e) {
+      errorCoinDetails = e.toString();
+      rethrow;
+    } finally {
+      isLoadingCoinDetails = false;
+      notifyListeners();
+    }
+  }
+
+  // Get coins for a specific category
+  List<CryptoCurrency> getCoinsForCategory(String categoryId) {
+    return coins
+        .where((coin) => coin.categories?.contains(categoryId) ?? false)
+        .toList();
   }
 }
