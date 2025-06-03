@@ -291,8 +291,14 @@ class _UserInfoPageState extends State<UserInfoPage> {
           height: 48,
           child: ElevatedButton.icon(
             onPressed: () => _showLogoutDialog(authViewModel),
-            icon: Icon(Icons.logout),
-            label: Text('登出'),
+            icon: Icon(Icons.logout, color: Colors.white),
+            label: Text(
+              '登出',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange[700],
               shape: RoundedRectangleBorder(
