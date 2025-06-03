@@ -5,6 +5,8 @@ import '../widgets/coin_list_item.dart';
 import '../widgets/category_grid_item.dart';
 import 'detail_page.dart';
 import 'category_detail_page.dart';
+import 'auth/login_page.dart';
+import '../viewModels/auth_view_model.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,6 +34,26 @@ class HomePageState extends State<HomePage> {
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
+          leading: Consumer<AuthViewModel>(
+            builder: (context, authViewModel, child) {
+              return IconButton(
+                icon: Icon(
+                  authViewModel.isLoggedIn ? Icons.account_circle : Icons.login,
+                  color: authViewModel.isLoggedIn ? Colors.green : Colors.white,
+                ),
+                onPressed: () {
+                  if (authViewModel.isLoggedIn) {
+                    _showUserMenu(context, authViewModel);
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginPage()),
+                    );
+                  }
+                },
+              );
+            },
+          ),
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -53,6 +75,37 @@ class HomePageState extends State<HomePage> {
           children: [_buildAllCoinsTab(), _buildCategoriesTab()],
         ),
       ),
+    );
+  }
+
+  void _showUserMenu(BuildContext context, AuthViewModel authViewModel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[850],
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.account_circle, color: Colors.green),
+                title: Text('已登入'),
+                subtitle: Text(authViewModel.user?.email ?? ''),
+              ),
+              Divider(),
+              ListTile(
+                leading: Icon(Icons.logout, color: Colors.red),
+                title: Text('登出'),
+                onTap: () {
+                  Navigator.pop(context);
+                  authViewModel.signOut();
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
