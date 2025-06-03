@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../viewModels/crypto_view_model.dart';
 import '../widgets/coin_list_item.dart';
 import '../widgets/category_grid_item.dart';
-import '../services/audio_service.dart';
 import 'detail_page.dart';
 import 'category_detail_page.dart';
 
@@ -15,8 +14,6 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
-  final AudioService _audioService = AudioService();
-
   @override
   void initState() {
     super.initState();
@@ -50,22 +47,6 @@ class HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          // Add music toggle button
-          actions: [
-            IconButton(
-              icon: Icon(
-                _audioService.isMusicEnabled
-                    ? Icons.music_note
-                    : Icons.music_off,
-              ),
-              onPressed: () {
-                setState(() {
-                  _audioService.toggleBackgroundMusic();
-                });
-              },
-              tooltip: 'Toggle background music',
-            ),
-          ],
           bottom: TabBar(tabs: [Tab(text: '全部'), Tab(text: '類別')]),
         ),
         body: TabBarView(
