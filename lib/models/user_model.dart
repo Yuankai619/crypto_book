@@ -6,6 +6,7 @@ class UserModel {
   final String? country;
   final DateTime? birthday;
   final String? phone;
+  final String? avatar;
 
   UserModel({
     required this.uid,
@@ -15,6 +16,7 @@ class UserModel {
     this.country,
     this.birthday,
     this.phone,
+    this.avatar,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
@@ -27,6 +29,7 @@ class UserModel {
       birthday:
           map['birthday'] != null ? DateTime.parse(map['birthday']) : null,
       phone: map['phone'],
+      avatar: map['avatar'],
     );
   }
 
@@ -39,6 +42,7 @@ class UserModel {
       'country': country,
       'birthday': birthday?.toIso8601String(),
       'phone': phone,
+      'avatar': avatar,
     };
   }
 }

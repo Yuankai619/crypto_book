@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../viewModels/auth_view_model.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+  final bool isGoogleSignUp;
+  final Map<String, dynamic>? googleUserData;
+  final UserCredential? userCredential;
+
+  const RegisterPage({
+    super.key,
+    this.isGoogleSignUp = false,
+    this.googleUserData,
+    this.userCredential,
+  });
 
   @override
   RegisterPageState createState() => RegisterPageState();
@@ -26,6 +36,16 @@ class RegisterPageState extends State<RegisterPage> {
   final List<String> _genders = ['男', '女', '其他'];
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.isGoogleSignUp && widget.googleUserData != null) {
+      _emailController.text = widget.googleUserData!['email'] ?? '';
+      _usernameController.text = widget.googleUserData!['username'] ?? '';
+      _phoneController.text = widget.googleUserData!['phone'] ?? '';
+    }
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -39,7 +59,10 @@ class RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('註冊'), backgroundColor: Colors.grey[850]),
+      appBar: AppBar(
+        title: Text(widget.isGoogleSignUp ? '完成註冊' : '註冊'),
+        backgroundColor: Colors.grey[850],
+      ),
       body: Consumer<AuthViewModel>(
         builder: (context, authViewModel, child) {
           return SingleChildScrollView(
@@ -48,8 +71,37 @@ class RegisterPageState extends State<RegisterPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  Icon(Icons.person_add, size: 80, color: Colors.grey[400]),
-                  SizedBox(height: 32),
+                  // Avatar display for Google users
+                  if (widget.isGoogleSignUp &&
+                      widget.googleUserData?['avatar'] != null)
+                    Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundImage: NetworkImage(
+                            widget.googleUserData!['avatar'],
+                          ),
+                          backgroundColor: Colors.grey[400],
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Google 頭像',
+                          style: TextStyle(color: Colors.grey[400]),
+                        ),
+                        SizedBox(height: 16),
+                      ],
+                    )
+                  else
+                    Column(
+                      children: [
+                        Icon(
+                          Icons.person_add,
+                          size: 80,
+                          color: Colors.grey[400],
+                        ),
+                        SizedBox(height: 32),
+                      ],
+                    ),
 
                   // Username field
                   TextFormField(
@@ -70,9 +122,10 @@ class RegisterPageState extends State<RegisterPage> {
                   ),
                   SizedBox(height: 16),
 
-                  // Email field
+                  // Email field (disabled for Google sign up)
                   TextFormField(
                     controller: _emailController,
+                    enabled: !widget.isGoogleSignUp,
                     decoration: InputDecoration(
                       labelText: 'Email',
                       prefixIcon: Icon(Icons.email),
@@ -94,75 +147,77 @@ class RegisterPageState extends State<RegisterPage> {
                   ),
                   SizedBox(height: 16),
 
-                  // Password field
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: '密碼',
-                      prefixIcon: Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                  // Password fields (only for email registration)
+                  if (!widget.isGoogleSignUp) ...[
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: '密碼',
+                        prefixIcon: Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return '請輸入密碼';
+                        }
+                        if (value.length < 6) {
+                          return '密碼長度必須大於 6 位';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '請輸入密碼';
-                      }
-                      if (value.length < 6) {
-                        return '密碼長度必須大於 6 位';
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 16),
+                    SizedBox(height: 16),
 
-                  // Confirm Password field
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    obscureText: _obscureConfirmPassword,
-                    decoration: InputDecoration(
-                      labelText: '確認密碼',
-                      prefixIcon: Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirmPassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      decoration: InputDecoration(
+                        labelText: '確認密碼',
+                        prefixIcon: Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            });
+                          },
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return '請確認密碼';
+                        }
+                        if (value != _passwordController.text) {
+                          return '密碼不一致';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '請確認密碼';
-                      }
-                      if (value != _passwordController.text) {
-                        return '密碼不一致';
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 16),
+                    SizedBox(height: 16),
+                  ],
 
                   // Gender dropdown
                   DropdownButtonFormField<String>(
@@ -279,7 +334,10 @@ class RegisterPageState extends State<RegisterPage> {
                       child:
                           authViewModel.isLoading
                               ? CircularProgressIndicator(color: Colors.white)
-                              : Text('註冊', style: TextStyle(fontSize: 16)),
+                              : Text(
+                                widget.isGoogleSignUp ? '完成註冊' : '註冊',
+                                style: TextStyle(fontSize: 16),
+                              ),
                     ),
                   ),
                 ],
@@ -312,25 +370,49 @@ class RegisterPageState extends State<RegisterPage> {
     if (_formKey.currentState!.validate()) {
       final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
 
-      bool success = await authViewModel.register(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        username: _usernameController.text.trim(),
-        gender: _selectedGender,
-        country:
-            _countryController.text.trim().isEmpty
-                ? null
-                : _countryController.text.trim(),
-        birthday: _selectedBirthday,
-        phone:
-            _phoneController.text.trim().isEmpty
-                ? null
-                : _phoneController.text.trim(),
-      );
+      bool success;
+
+      if (widget.isGoogleSignUp) {
+        // Google 註冊完成
+        success = await authViewModel.completeGoogleRegistration(
+          userCredential: widget.userCredential!,
+          username: _usernameController.text.trim(),
+          gender: _selectedGender,
+          country:
+              _countryController.text.trim().isEmpty
+                  ? null
+                  : _countryController.text.trim(),
+          birthday: _selectedBirthday,
+          phone:
+              _phoneController.text.trim().isEmpty
+                  ? null
+                  : _phoneController.text.trim(),
+          avatar: widget.googleUserData?['avatar'],
+        );
+      } else {
+        // 一般 Email 註冊
+        success = await authViewModel.register(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          username: _usernameController.text.trim(),
+          gender: _selectedGender,
+          country:
+              _countryController.text.trim().isEmpty
+                  ? null
+                  : _countryController.text.trim(),
+          birthday: _selectedBirthday,
+          phone:
+              _phoneController.text.trim().isEmpty
+                  ? null
+                  : _phoneController.text.trim(),
+        );
+      }
 
       if (success) {
         Navigator.pop(context);
-        Navigator.pop(context);
+        if (widget.isGoogleSignUp) {
+          Navigator.pop(context);
+        }
       }
     }
   }

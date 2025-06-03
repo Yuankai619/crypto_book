@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../viewModels/auth_view_model.dart';
 import 'register_page.dart';
 
@@ -133,6 +134,44 @@ class LoginPageState extends State<LoginPage> {
                   ),
                   SizedBox(height: 16),
 
+                  // Divider
+                  Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('或'),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+
+                  // Google login button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: authViewModel.isLoading ? null : _googleLogin,
+                      icon: Image.asset(
+                        'assets/image/google_logo.png',
+                        height: 24,
+                        width: 24,
+                        errorBuilder:
+                            (context, error, stackTrace) =>
+                                Icon(Icons.g_mobiledata, size: 24),
+                      ),
+                      label: Text('使用 Google 登入'),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.grey[400]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
                   // Register link
                   TextButton(
                     onPressed: () {
@@ -163,6 +202,46 @@ class LoginPageState extends State<LoginPage> {
 
       if (success) {
         Navigator.pop(context);
+      }
+    }
+  }
+
+  void _googleLogin() async {
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+
+    // 清除之前的錯誤
+    authViewModel.clearError();
+
+    Map<String, dynamic>? result = await authViewModel.signInWithGoogle();
+
+    if (result != null) {
+      if (result['isNewUser']) {
+        // 新用戶，導向註冊頁面
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => RegisterPage(
+                  isGoogleSignUp: true,
+                  googleUserData: result['googleUserData'],
+                  userCredential: result['userCredential'],
+                ),
+          ),
+        );
+      } else {
+        // 已存在用戶，直接登入
+        Navigator.pop(context);
+      }
+    } else {
+      // 顯示錯誤訊息
+      if (authViewModel.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authViewModel.error!),
+            backgroundColor: Colors.red[800],
+            duration: Duration(seconds: 5),
+          ),
+        );
       }
     }
   }
