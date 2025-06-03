@@ -172,6 +172,29 @@ class LoginPageState extends State<LoginPage> {
                   ),
                   SizedBox(height: 16),
 
+                  // Facebook login button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed:
+                          authViewModel.isLoading ? null : _facebookLogin,
+                      icon: Icon(
+                        Icons.facebook,
+                        color: Color(0xFF1877F2),
+                        size: 24,
+                      ),
+                      label: Text('使用 Facebook 登入'),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Color(0xFF1877F2)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
                   // Register link
                   TextButton(
                     onPressed: () {
@@ -224,6 +247,46 @@ class LoginPageState extends State<LoginPage> {
                 (context) => RegisterPage(
                   isGoogleSignUp: true,
                   googleUserData: result['googleUserData'],
+                  userCredential: result['userCredential'],
+                ),
+          ),
+        );
+      } else {
+        // 已存在用戶，直接登入
+        Navigator.pop(context);
+      }
+    } else {
+      // 顯示錯誤訊息
+      if (authViewModel.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authViewModel.error!),
+            backgroundColor: Colors.red[800],
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  void _facebookLogin() async {
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+
+    // 清除之前的錯誤
+    authViewModel.clearError();
+
+    Map<String, dynamic>? result = await authViewModel.signInWithFacebook();
+
+    if (result != null) {
+      if (result['isNewUser']) {
+        // 新用戶，導向註冊頁面
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => RegisterPage(
+                  isFacebookSignUp: true,
+                  facebookUserData: result['facebookUserData'],
                   userCredential: result['userCredential'],
                 ),
           ),

@@ -5,13 +5,17 @@ import '../../viewModels/auth_view_model.dart';
 
 class RegisterPage extends StatefulWidget {
   final bool isGoogleSignUp;
+  final bool isFacebookSignUp;
   final Map<String, dynamic>? googleUserData;
+  final Map<String, dynamic>? facebookUserData;
   final UserCredential? userCredential;
 
   const RegisterPage({
     super.key,
     this.isGoogleSignUp = false,
+    this.isFacebookSignUp = false,
     this.googleUserData,
+    this.facebookUserData,
     this.userCredential,
   });
 
@@ -42,6 +46,10 @@ class RegisterPageState extends State<RegisterPage> {
       _emailController.text = widget.googleUserData!['email'] ?? '';
       _usernameController.text = widget.googleUserData!['username'] ?? '';
       _phoneController.text = widget.googleUserData!['phone'] ?? '';
+    } else if (widget.isFacebookSignUp && widget.facebookUserData != null) {
+      _emailController.text = widget.facebookUserData!['email'] ?? '';
+      _usernameController.text = widget.facebookUserData!['username'] ?? '';
+      _phoneController.text = widget.facebookUserData!['phone'] ?? '';
     }
   }
 
@@ -58,9 +66,14 @@ class RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isSocialSignUp =
+        widget.isGoogleSignUp || widget.isFacebookSignUp;
+    final Map<String, dynamic>? socialUserData =
+        widget.isGoogleSignUp ? widget.googleUserData : widget.facebookUserData;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isGoogleSignUp ? '完成註冊' : '註冊'),
+        title: Text(isSocialSignUp ? '完成註冊' : '註冊'),
         backgroundColor: Colors.grey[850],
       ),
       body: Consumer<AuthViewModel>(
@@ -71,21 +84,20 @@ class RegisterPageState extends State<RegisterPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  // Avatar display for Google users
-                  if (widget.isGoogleSignUp &&
-                      widget.googleUserData?['avatar'] != null)
+                  // Avatar display for social login users
+                  if (isSocialSignUp && socialUserData?['avatar'] != null)
                     Column(
                       children: [
                         CircleAvatar(
                           radius: 40,
                           backgroundImage: NetworkImage(
-                            widget.googleUserData!['avatar'],
+                            socialUserData!['avatar'],
                           ),
                           backgroundColor: Colors.grey[400],
                         ),
                         SizedBox(height: 16),
                         Text(
-                          'Google 頭像',
+                          widget.isGoogleSignUp ? 'Google 頭像' : 'Facebook 頭像',
                           style: TextStyle(color: Colors.grey[400]),
                         ),
                         SizedBox(height: 16),
@@ -122,10 +134,10 @@ class RegisterPageState extends State<RegisterPage> {
                   ),
                   SizedBox(height: 16),
 
-                  // Email field (disabled for Google sign up)
+                  // Email field (disabled for social sign up)
                   TextFormField(
                     controller: _emailController,
-                    enabled: !widget.isGoogleSignUp,
+                    enabled: !isSocialSignUp,
                     decoration: InputDecoration(
                       labelText: 'Email',
                       prefixIcon: Icon(Icons.email),
@@ -148,7 +160,7 @@ class RegisterPageState extends State<RegisterPage> {
                   SizedBox(height: 16),
 
                   // Password fields (only for email registration)
-                  if (!widget.isGoogleSignUp) ...[
+                  if (!isSocialSignUp) ...[
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -335,7 +347,7 @@ class RegisterPageState extends State<RegisterPage> {
                           authViewModel.isLoading
                               ? CircularProgressIndicator(color: Colors.white)
                               : Text(
-                                widget.isGoogleSignUp ? '完成註冊' : '註冊',
+                                isSocialSignUp ? '完成註冊' : '註冊',
                                 style: TextStyle(fontSize: 16),
                               ),
                     ),
@@ -389,6 +401,23 @@ class RegisterPageState extends State<RegisterPage> {
                   : _phoneController.text.trim(),
           avatar: widget.googleUserData?['avatar'],
         );
+      } else if (widget.isFacebookSignUp) {
+        // Facebook 註冊完成
+        success = await authViewModel.completeFacebookRegistration(
+          userCredential: widget.userCredential!,
+          username: _usernameController.text.trim(),
+          gender: _selectedGender,
+          country:
+              _countryController.text.trim().isEmpty
+                  ? null
+                  : _countryController.text.trim(),
+          birthday: _selectedBirthday,
+          phone:
+              _phoneController.text.trim().isEmpty
+                  ? null
+                  : _phoneController.text.trim(),
+          avatar: widget.facebookUserData?['avatar'],
+        );
       } else {
         // 一般 Email 註冊
         success = await authViewModel.register(
@@ -410,7 +439,7 @@ class RegisterPageState extends State<RegisterPage> {
 
       if (success) {
         Navigator.pop(context);
-        if (widget.isGoogleSignUp) {
+        if (widget.isGoogleSignUp || widget.isFacebookSignUp) {
           Navigator.pop(context);
         }
       }

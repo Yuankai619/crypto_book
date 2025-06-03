@@ -67,6 +67,29 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>?> signInWithFacebook() async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      Map<String, dynamic> result = await _authService.signInWithFacebook();
+      return result;
+    } on Exception catch (e) {
+      // 處理自定義異常
+      _error = e.toString().replaceAll('Exception: ', '');
+      return null;
+    } catch (e) {
+      // 處理其他錯誤
+      print('Unexpected error in signInWithFacebook: $e');
+      _error = 'Facebook 登入發生未知錯誤，請重試';
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> register({
     required String email,
     required String password,
@@ -117,6 +140,39 @@ class AuthViewModel extends ChangeNotifier {
       notifyListeners();
 
       await _authService.completeGoogleRegistration(
+        userCredential: userCredential,
+        username: username,
+        gender: gender,
+        country: country,
+        birthday: birthday,
+        phone: phone,
+        avatar: avatar,
+      );
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> completeFacebookRegistration({
+    required UserCredential userCredential,
+    required String username,
+    String? gender,
+    String? country,
+    DateTime? birthday,
+    String? phone,
+    String? avatar,
+  }) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      await _authService.completeFacebookRegistration(
         userCredential: userCredential,
         username: username,
         gender: gender,
