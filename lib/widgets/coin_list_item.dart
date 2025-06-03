@@ -46,7 +46,7 @@ class CoinListItem extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Symbol: ${coin.symbol.toUpperCase()}',
+                      coin.symbol.toUpperCase(),
                       style: TextStyle(color: Colors.grey[400], fontSize: 12),
                     ),
                   ],

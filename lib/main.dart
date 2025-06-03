@@ -7,6 +7,7 @@ import 'views/home_page.dart';
 import 'viewModels/crypto_view_model.dart';
 import 'viewModels/auth_view_model.dart';
 import 'viewModels/favorite_view_model.dart';
+import 'viewModels/user_info_view_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => CryptoViewModel()),
         ChangeNotifierProvider(create: (context) => AuthViewModel()),
         ChangeNotifierProvider(create: (context) => FavoriteViewModel()),
+        ChangeNotifierProvider(create: (context) => UserInfoViewModel()),
       ],
       child: MyApp(),
     ),

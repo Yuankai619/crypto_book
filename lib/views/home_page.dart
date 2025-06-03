@@ -8,6 +8,8 @@ import 'category_detail_page.dart';
 import 'auth/login_page.dart';
 import '../viewModels/auth_view_model.dart';
 import 'favorites_page.dart';
+import 'user_info_page.dart';
+import '../viewModels/user_info_view_model.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -33,6 +35,16 @@ class HomePageState extends State<HomePage>
       final viewModel = Provider.of<CryptoViewModel>(context, listen: false);
       viewModel.loadCoins();
       viewModel.loadCategories();
+
+      // Load user info to get avatar
+      final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+      if (authViewModel.isLoggedIn) {
+        final userInfoViewModel = Provider.of<UserInfoViewModel>(
+          context,
+          listen: false,
+        );
+        userInfoViewModel.loadUserInfo();
+      }
     });
   }
 
@@ -48,23 +60,75 @@ class HomePageState extends State<HomePage>
     return Scaffold(
       appBar: AppBar(
         centerTitle: !_isSearching,
-        leading: Consumer<AuthViewModel>(
-          builder: (context, authViewModel, child) {
-            return IconButton(
-              icon: Icon(
-                authViewModel.isLoggedIn ? Icons.account_circle : Icons.login,
-                color: authViewModel.isLoggedIn ? Colors.green : Colors.white,
-              ),
-              onPressed: () {
-                if (authViewModel.isLoggedIn) {
-                  _showUserMenu(context, authViewModel);
-                } else {
+        leading: Consumer2<AuthViewModel, UserInfoViewModel>(
+          builder: (context, authViewModel, userInfoViewModel, child) {
+            if (!authViewModel.isLoggedIn) {
+              // 未登入時顯示登入圖示
+              return IconButton(
+                icon: Icon(Icons.login, color: Colors.white),
+                onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => LoginPage()),
                   );
-                }
+                },
+              );
+            }
+
+            // 已登入時顯示頭像
+            final user = userInfoViewModel.currentUser;
+            final hasAvatar = user?.avatar != null && user!.avatar!.isNotEmpty;
+
+            return IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => UserInfoPage()),
+                );
               },
+              icon: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.green, width: 2),
+                ),
+                child: ClipOval(
+                  child:
+                      hasAvatar
+                          ? Image.network(
+                            user!.avatar!,
+                            width: 28,
+                            height: 28,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.account_circle,
+                                color: Colors.green,
+                                size: 28,
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                width: 28,
+                                height: 28,
+                                color: Colors.grey[700],
+                                child: Icon(
+                                  Icons.account_circle,
+                                  color: Colors.green,
+                                  size: 16,
+                                ),
+                              );
+                            },
+                          )
+                          : Icon(
+                            Icons.account_circle,
+                            color: Colors.green,
+                            size: 28,
+                          ),
+                ),
+              ),
             );
           },
         ),
@@ -135,37 +199,6 @@ class HomePageState extends State<HomePage>
         setState(() {
           _searchQuery = value.toLowerCase();
         });
-      },
-    );
-  }
-
-  void _showUserMenu(BuildContext context, AuthViewModel authViewModel) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[850],
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(Icons.account_circle, color: Colors.green),
-                title: Text('已登入'),
-                subtitle: Text(authViewModel.user?.email ?? ''),
-              ),
-              Divider(),
-              ListTile(
-                leading: Icon(Icons.logout, color: Colors.red),
-                title: Text('登出'),
-                onTap: () {
-                  Navigator.pop(context);
-                  authViewModel.signOut();
-                },
-              ),
-            ],
-          ),
-        );
       },
     );
   }
