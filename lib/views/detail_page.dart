@@ -88,9 +88,12 @@ class DetailPageState extends State<DetailPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  SizedBox(height: 16),
                   Text(
                     'Error: ${snapshot.error}',
                     style: TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16),
                   ElevatedButton(
@@ -100,9 +103,10 @@ class DetailPageState extends State<DetailPage> {
                           context,
                           listen: false,
                         ).getCoinDetails(widget.coinId);
+                        _checkFavoriteStatus();
                       });
                     },
-                    child: Text('Retry'),
+                    child: Text('重試'),
                   ),
                 ],
               ),
@@ -114,111 +118,124 @@ class DetailPageState extends State<DetailPage> {
           }
 
           final coin = snapshot.data!;
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with image
-                Container(
-                  height: 200,
-                  width: double.infinity,
-                  color: Colors.grey[850],
-                  child: Center(
-                    child: Image.network(
-                      coin.imageUrl,
-                      height: 120,
-                      width: 120,
-                      errorBuilder:
-                          (context, error, stackTrace) =>
-                              Icon(Icons.image_not_supported, size: 80),
+          return RefreshIndicator(
+            onRefresh: () async {
+              setState(() {
+                _coinFuture = Provider.of<CryptoViewModel>(
+                  context,
+                  listen: false,
+                ).getCoinDetails(widget.coinId);
+              });
+              await _coinFuture;
+              _checkFavoriteStatus();
+            },
+            child: SingleChildScrollView(
+              physics: AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header with image
+                  Container(
+                    height: 200,
+                    width: double.infinity,
+                    color: Colors.grey[850],
+                    child: Center(
+                      child: Image.network(
+                        coin.imageUrl,
+                        height: 120,
+                        width: 120,
+                        errorBuilder:
+                            (context, error, stackTrace) =>
+                                Icon(Icons.image_not_supported, size: 80),
+                      ),
                     ),
                   ),
-                ),
 
-                // Coin information
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                  // Coin information
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    coin.name,
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    coin.symbol.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  coin.name,
+                                  'US\$${coin.currentPrice.toStringAsFixed(2)}',
                                   style: TextStyle(
-                                    fontSize: 28,
+                                    fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                SizedBox(height: 4),
-                                Text(
-                                  coin.symbol.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[400],
+                                if (coin.marketCapRank != null)
+                                  Text(
+                                    'Rank #${coin.marketCapRank}',
+                                    style: TextStyle(color: Colors.grey[400]),
                                   ),
-                                ),
                               ],
                             ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'US\$${coin.currentPrice.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              if (coin.marketCapRank != null)
-                                Text(
-                                  'Rank #${coin.marketCapRank}',
-                                  style: TextStyle(color: Colors.grey[400]),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
-
-                      // Market Cap
-                      _buildInfoSection(
-                        'Market Cap',
-                        'US\$${_formatNumber(coin.marketCap)}',
-                      ),
-
-                      // Categories if available
-                      if (coin.categories != null &&
-                          coin.categories!.isNotEmpty)
-                        _buildCategoriesSection(coin.categories!),
-
-                      // Description if available
-                      if (coin.description != null &&
-                          coin.description!.isNotEmpty)
-                        _buildDescriptionSection(coin.description!),
-
-                      // Genesis date if available
-                      if (coin.genesisDate != null &&
-                          coin.genesisDate!.isNotEmpty)
-                        _buildInfoSection('Genesis Date', coin.genesisDate!),
-
-                      // Country origin if available
-                      if (coin.countryOrigin != null &&
-                          coin.countryOrigin!.isNotEmpty)
-                        _buildInfoSection(
-                          'Country Origin',
-                          coin.countryOrigin!,
+                          ],
                         ),
-                    ],
+                        SizedBox(height: 16),
+
+                        // Market Cap
+                        _buildInfoSection(
+                          'Market Cap',
+                          'US\$${_formatNumber(coin.marketCap)}',
+                        ),
+
+                        // Categories if available
+                        if (coin.categories != null &&
+                            coin.categories!.isNotEmpty)
+                          _buildCategoriesSection(coin.categories!),
+
+                        // Description if available
+                        if (coin.description != null &&
+                            coin.description!.isNotEmpty)
+                          _buildDescriptionSection(coin.description!),
+
+                        // Genesis date if available
+                        if (coin.genesisDate != null &&
+                            coin.genesisDate!.isNotEmpty)
+                          _buildInfoSection('Genesis Date', coin.genesisDate!),
+
+                        // Country origin if available
+                        if (coin.countryOrigin != null &&
+                            coin.countryOrigin!.isNotEmpty)
+                          _buildInfoSection(
+                            'Country Origin',
+                            coin.countryOrigin!,
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },

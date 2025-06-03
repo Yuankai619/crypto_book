@@ -14,121 +14,134 @@ class CategoryDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(category.name)),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with category info
-            Container(
-              padding: EdgeInsets.all(16),
-              color: Colors.grey[850],
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category.name,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Market Cap: ${_formatMarketCap(category.marketCap)}',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '24h Change: ${category.marketCapChange24h.toStringAsFixed(2)}%',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color:
-                          category.marketCapChange24h >= 0
-                              ? Colors.green
-                              : Colors.red,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Top coins row
-                  if (category.top3CoinsImages.isNotEmpty)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Top Coins',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          children: List.generate(
-                            category.top3CoinsImages.length,
-                            (index) => Padding(
-                              padding: const EdgeInsets.only(right: 16.0),
-                              child: GestureDetector(
-                                onTap: () {
-                                  if (index < category.top3CoinsId.length) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => DetailPage(
-                                              coinId:
-                                                  category.top3CoinsId[index],
-                                            ),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: CircleAvatar(
-                                  radius: 24,
-                                  backgroundColor: Colors.grey[800],
-                                  backgroundImage: NetworkImage(
-                                    category.top3CoinsImages[index],
-                                  ),
-                                  onBackgroundImageError: (_, __) {},
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-
-            // Description section
-            if (category.content.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final viewModel = Provider.of<CryptoViewModel>(
+            context,
+            listen: false,
+          );
+          await viewModel.loadCoins();
+        },
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with category info
+              Container(
+                padding: EdgeInsets.all(16),
+                color: Colors.grey[850],
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'About',
+                      category.name,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     SizedBox(height: 8),
-                    Text(category.content),
+                    Text(
+                      'Market Cap: ${_formatMarketCap(category.marketCap)}',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '24h Change: ${category.marketCapChange24h.toStringAsFixed(2)}%',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color:
+                            category.marketCapChange24h >= 0
+                                ? Colors.green
+                                : Colors.red,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+
+                    // Top coins row
+                    if (category.top3CoinsImages.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Top Coins',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Row(
+                            children: List.generate(
+                              category.top3CoinsImages.length,
+                              (index) => Padding(
+                                padding: const EdgeInsets.only(right: 16.0),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    if (index < category.top3CoinsId.length) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) => DetailPage(
+                                                coinId:
+                                                    category.top3CoinsId[index],
+                                              ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: CircleAvatar(
+                                    radius: 24,
+                                    backgroundColor: Colors.grey[800],
+                                    backgroundImage: NetworkImage(
+                                      category.top3CoinsImages[index],
+                                    ),
+                                    onBackgroundImageError: (_, __) {},
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
 
-            // Coins in this category
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Coins in this Category',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
+              // Description section
+              if (category.content.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'About',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(category.content),
+                    ],
+                  ),
+                ),
 
-            _buildCoinsList(context),
-          ],
+              // Coins in this category
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Coins in this Category',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+
+              _buildCoinsList(context),
+            ],
+          ),
         ),
       ),
     );

@@ -16,10 +16,18 @@ class HomePage extends StatefulWidget {
   HomePageState createState() => HomePageState();
 }
 
-class HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+
     // Load data after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final viewModel = Provider.of<CryptoViewModel>(context, listen: false);
@@ -29,64 +37,105 @@ class HomePageState extends State<HomePage> {
   }
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          leading: Consumer<AuthViewModel>(
-            builder: (context, authViewModel, child) {
-              return IconButton(
-                icon: Icon(
-                  authViewModel.isLoggedIn ? Icons.account_circle : Icons.login,
-                  color: authViewModel.isLoggedIn ? Colors.green : Colors.white,
-                ),
-                onPressed: () {
-                  if (authViewModel.isLoggedIn) {
-                    _showUserMenu(context, authViewModel);
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginPage()),
-                    );
-                  }
-                },
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: !_isSearching,
+        leading: Consumer<AuthViewModel>(
+          builder: (context, authViewModel, child) {
+            return IconButton(
+              icon: Icon(
+                authViewModel.isLoggedIn ? Icons.account_circle : Icons.login,
+                color: authViewModel.isLoggedIn ? Colors.green : Colors.white,
+              ),
+              onPressed: () {
+                if (authViewModel.isLoggedIn) {
+                  _showUserMenu(context, authViewModel);
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginPage()),
+                  );
+                }
+              },
+            );
+          },
+        ),
+        title: _isSearching ? _buildSearchField() : _buildTitle(),
+        actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                if (_isSearching) {
+                  _isSearching = false;
+                  _searchQuery = '';
+                  _searchController.clear();
+                } else {
+                  _isSearching = true;
+                }
+              });
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.favorite),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FavoritesPage()),
               );
             },
           ),
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/image/crypto_book_appbar_icon.png',
-                height: 34,
-                width: 34,
-              ),
-              SizedBox(width: 8),
-              Text(
-                '幣冊',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.favorite),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => FavoritesPage()),
-                );
-              },
-            ),
-          ],
-          bottom: TabBar(tabs: [Tab(text: '全部'), Tab(text: '類別')]),
-        ),
-        body: TabBarView(
-          children: [_buildAllCoinsTab(), _buildCategoriesTab()],
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [Tab(text: '全部'), Tab(text: '類別')],
         ),
       ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [_buildAllCoinsTab(), _buildCategoriesTab()],
+      ),
+    );
+  }
+
+  Widget _buildTitle() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Image.asset(
+          'assets/image/crypto_book_appbar_icon.png',
+          height: 34,
+          width: 34,
+        ),
+        SizedBox(width: 8),
+        Text('幣冊', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _searchController,
+      autofocus: true,
+      decoration: InputDecoration(
+        hintText: '搜尋貨幣名稱或代號...',
+        border: InputBorder.none,
+        hintStyle: TextStyle(color: Colors.grey[400]),
+      ),
+      style: TextStyle(color: Colors.white),
+      onChanged: (value) {
+        setState(() {
+          _searchQuery = value.toLowerCase();
+        });
+      },
     );
   }
 
@@ -133,36 +182,74 @@ class HomePageState extends State<HomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red),
+                SizedBox(height: 16),
                 Text(
                   'Error: ${viewModel.errorCoins}',
                   style: TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => viewModel.loadCoins(),
-                  child: Text('Retry'),
+                  child: Text('重試'),
                 ),
               ],
             ),
           );
         }
 
-        return ListView.builder(
-          itemCount: viewModel.coins.length,
-          itemBuilder: (context, index) {
-            final coin = viewModel.coins[index];
-            return CoinListItem(
-              coin: coin,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetailPage(coinId: coin.id),
-                  ),
-                );
-              },
-            );
+        // 過濾搜尋結果
+        final filteredCoins =
+            _searchQuery.isEmpty
+                ? viewModel.coins
+                : viewModel.coins.where((coin) {
+                  return coin.name.toLowerCase().contains(_searchQuery) ||
+                      coin.symbol.toLowerCase().contains(_searchQuery);
+                }).toList();
+
+        if (filteredCoins.isEmpty && _searchQuery.isNotEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                SizedBox(height: 16),
+                Text(
+                  '找不到符合的貨幣',
+                  style: TextStyle(fontSize: 18, color: Colors.grey[400]),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '請嘗試其他關鍵字',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            await viewModel.loadCoins();
           },
+          child: ListView.builder(
+            itemCount: filteredCoins.length,
+            itemBuilder: (context, index) {
+              final coin = filteredCoins[index];
+              return CoinListItem(
+                coin: coin,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailPage(coinId: coin.id),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         );
       },
     );
@@ -180,44 +267,52 @@ class HomePageState extends State<HomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red),
+                SizedBox(height: 16),
                 Text(
                   'Error: ${viewModel.errorCategories}',
                   style: TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => viewModel.loadCategories(),
-                  child: Text('Retry'),
+                  child: Text('重試'),
                 ),
               ],
             ),
           );
         }
 
-        return GridView.builder(
-          padding: EdgeInsets.all(16),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.2,
-          ),
-          itemCount: viewModel.categories.length,
-          itemBuilder: (context, index) {
-            final category = viewModel.categories[index];
-            return CategoryGridItem(
-              category: category,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => CategoryDetailPage(category: category),
-                  ),
-                );
-              },
-            );
+        return RefreshIndicator(
+          onRefresh: () async {
+            await viewModel.loadCategories();
           },
+          child: GridView.builder(
+            padding: EdgeInsets.all(16),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.2,
+            ),
+            itemCount: viewModel.categories.length,
+            itemBuilder: (context, index) {
+              final category = viewModel.categories[index];
+              return CategoryGridItem(
+                category: category,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => CategoryDetailPage(category: category),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         );
       },
     );
