@@ -20,6 +20,7 @@ class _UserInfoPageState extends State<UserInfoPage> {
   String? _selectedGender;
   DateTime? _selectedBirthday;
   bool _isEditing = false;
+  bool _isDataLoaded = false; // 新增標記來追蹤資料是否已載入
 
   final List<String> _genders = ['男', '女', '其他'];
 
@@ -48,11 +49,15 @@ class _UserInfoPageState extends State<UserInfoPage> {
   }
 
   void _loadUserData(UserModel user) {
-    _usernameController.text = user.username;
-    _phoneController.text = user.phone ?? '';
-    _countryController.text = user.country ?? '';
-    _selectedGender = user.gender;
-    _selectedBirthday = user.birthday;
+    // 只在資料未載入或不在編輯模式時才更新控制器
+    if (!_isDataLoaded || !_isEditing) {
+      _usernameController.text = user.username;
+      _phoneController.text = user.phone ?? '';
+      _countryController.text = user.country ?? '';
+      _selectedGender = user.gender;
+      _selectedBirthday = user.birthday;
+      _isDataLoaded = true;
+    }
   }
 
   @override
@@ -72,9 +77,24 @@ class _UserInfoPageState extends State<UserInfoPage> {
               },
             )
           else
-            TextButton(
-              onPressed: _saveUserInfo,
-              child: Text('保存', style: TextStyle(color: Colors.blue)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isEditing = false;
+                      // 取消編輯時重新載入原始資料
+                      _isDataLoaded = false;
+                    });
+                  },
+                  child: Text('取消', style: TextStyle(color: Colors.grey)),
+                ),
+                TextButton(
+                  onPressed: _saveUserInfo,
+                  child: Text('保存', style: TextStyle(color: Colors.blue)),
+                ),
+              ],
             ),
         ],
       ),
@@ -114,6 +134,9 @@ class _UserInfoPageState extends State<UserInfoPage> {
           return RefreshIndicator(
             onRefresh: () async {
               await userInfoViewModel.loadUserInfo();
+              setState(() {
+                _isDataLoaded = false; // 重新載入後重置標記
+              });
             },
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
@@ -370,6 +393,7 @@ class _UserInfoPageState extends State<UserInfoPage> {
       if (success) {
         setState(() {
           _isEditing = false;
+          _isDataLoaded = true; // 保持資料已載入狀態
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('資料更新成功'), backgroundColor: Colors.green[800]),
