@@ -153,14 +153,12 @@ class LoginPageState extends State<LoginPage> {
                     height: 48,
                     child: OutlinedButton.icon(
                       onPressed: authViewModel.isLoading ? null : _googleLogin,
-                      icon: Image.asset(
-                        'assets/image/google_logo.png',
-                        height: 24,
-                        width: 24,
-                        errorBuilder:
-                            (context, error, stackTrace) =>
-                                Icon(Icons.g_mobiledata, size: 24),
+                      icon: Icon(
+                        Icons.g_mobiledata,
+                        size: 28,
+                        color: Colors.white,
                       ),
+
                       label: Text('使用 Google 登入'),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: Colors.grey[400]!),
@@ -240,7 +238,7 @@ class LoginPageState extends State<LoginPage> {
     if (result != null) {
       if (result['isNewUser']) {
         // 新用戶，導向註冊頁面
-        Navigator.pushReplacement(
+        final registerResult = await Navigator.push(
           context,
           MaterialPageRoute(
             builder:
@@ -251,6 +249,11 @@ class LoginPageState extends State<LoginPage> {
                 ),
           ),
         );
+
+        // 如果註冊成功，關閉登入頁面
+        if (registerResult == true) {
+          Navigator.pop(context);
+        }
       } else {
         // 已存在用戶，直接登入
         Navigator.pop(context);
@@ -280,7 +283,7 @@ class LoginPageState extends State<LoginPage> {
     if (result != null) {
       if (result['isNewUser']) {
         // 新用戶，導向註冊頁面
-        Navigator.pushReplacement(
+        final registerResult = await Navigator.push(
           context,
           MaterialPageRoute(
             builder:
@@ -291,6 +294,11 @@ class LoginPageState extends State<LoginPage> {
                 ),
           ),
         );
+
+        // 如果註冊成功，關閉登入頁面
+        if (registerResult == true) {
+          Navigator.pop(context);
+        }
       } else {
         // 已存在用戶，直接登入
         Navigator.pop(context);

@@ -15,6 +15,18 @@ class UserInfoViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  UserInfoViewModel() {
+    // 監聽認證狀態變化，自動載入用戶資訊
+    _auth.authStateChanges().listen((User? user) {
+      if (user != null) {
+        loadUserInfo();
+      } else {
+        _currentUser = null;
+        notifyListeners();
+      }
+    });
+  }
+
   Future<void> loadUserInfo() async {
     if (_auth.currentUser == null) return;
 

@@ -438,8 +438,17 @@ class RegisterPageState extends State<RegisterPage> {
       }
 
       if (success) {
-        Navigator.pop(context);
+        // 顯示成功訊息
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('註冊成功！'), backgroundColor: Colors.green[800]),
+        );
+
+        // 修正導航邏輯
         if (widget.isGoogleSignUp || widget.isFacebookSignUp) {
+          // Social login 註冊完成，直接回傳成功並關閉所有相關頁面
+          Navigator.of(context).pop(true); // 返回到登入頁面
+        } else {
+          // Email 註冊完成，返回到登入頁面
           Navigator.pop(context);
         }
       }

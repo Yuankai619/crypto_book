@@ -148,6 +148,9 @@ class AuthViewModel extends ChangeNotifier {
         phone: phone,
         avatar: avatar,
       );
+
+      // 註冊完成後通知監聽者更新 UI
+      notifyListeners();
       return true;
     } catch (e) {
       _error = e.toString();
@@ -181,6 +184,9 @@ class AuthViewModel extends ChangeNotifier {
         phone: phone,
         avatar: avatar,
       );
+
+      // 註冊完成後通知監聽者更新 UI
+      notifyListeners();
       return true;
     } catch (e) {
       _error = e.toString();

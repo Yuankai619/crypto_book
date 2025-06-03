@@ -45,6 +45,17 @@ class HomePageState extends State<HomePage>
         );
         userInfoViewModel.loadUserInfo();
       }
+
+      // 監聽認證狀態變化
+      authViewModel.addListener(() {
+        if (authViewModel.isLoggedIn) {
+          final userInfoViewModel = Provider.of<UserInfoViewModel>(
+            context,
+            listen: false,
+          );
+          userInfoViewModel.loadUserInfo();
+        }
+      });
     });
   }
 
