@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewModels/crypto_view_model.dart';
 import '../models/crypto_currency.dart';
+import '../viewModels/favorite_view_model.dart';
+import '../viewModels/auth_view_model.dart';
+import 'auth/login_page.dart';
 
 class DetailPage extends StatefulWidget {
   final String coinId;
@@ -14,6 +17,8 @@ class DetailPage extends StatefulWidget {
 
 class DetailPageState extends State<DetailPage> {
   late Future<CryptoCurrency> _coinFuture;
+  bool _isFavorite = false;
+  bool _isCheckingFavorite = true;
 
   @override
   void initState() {
@@ -22,12 +27,55 @@ class DetailPageState extends State<DetailPage> {
       context,
       listen: false,
     ).getCoinDetails(widget.coinId);
+    _checkFavoriteStatus();
+  }
+
+  void _checkFavoriteStatus() async {
+    final favoriteViewModel = Provider.of<FavoriteViewModel>(
+      context,
+      listen: false,
+    );
+    final isFav = await favoriteViewModel.isFavorite(widget.coinId);
+    setState(() {
+      _isFavorite = isFav;
+      _isCheckingFavorite = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('幣種詳情')),
+      appBar: AppBar(
+        title: Text('幣種詳情'),
+        actions: [
+          Consumer2<AuthViewModel, FavoriteViewModel>(
+            builder: (context, authViewModel, favoriteViewModel, child) {
+              if (_isCheckingFavorite) {
+                return Padding(
+                  padding: EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              }
+
+              return IconButton(
+                icon: Icon(
+                  _isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: _isFavorite ? Colors.red : Colors.white,
+                ),
+                onPressed:
+                    favoriteViewModel.isLoading
+                        ? null
+                        : () =>
+                            _toggleFavorite(authViewModel, favoriteViewModel),
+              );
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<CryptoCurrency>(
         future: _coinFuture,
         builder: (context, snapshot) {
@@ -176,6 +224,61 @@ class DetailPageState extends State<DetailPage> {
         },
       ),
     );
+  }
+
+  void _toggleFavorite(
+    AuthViewModel authViewModel,
+    FavoriteViewModel favoriteViewModel,
+  ) async {
+    if (!authViewModel.isLoggedIn) {
+      // 未登入，導向登入頁面
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+
+      if (result == true || authViewModel.isLoggedIn) {
+        _checkFavoriteStatus();
+      }
+      return;
+    }
+
+    final coin = await _coinFuture;
+    bool success;
+
+    if (_isFavorite) {
+      success = await favoriteViewModel.removeFromFavorites(widget.coinId);
+      if (success) {
+        setState(() {
+          _isFavorite = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('已從收藏中移除'),
+            backgroundColor: Colors.orange[800],
+          ),
+        );
+      }
+    } else {
+      success = await favoriteViewModel.addToFavorites(coin);
+      if (success) {
+        setState(() {
+          _isFavorite = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('收藏成功'), backgroundColor: Colors.green[800]),
+        );
+      }
+    }
+
+    if (!success && favoriteViewModel.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('操作失敗：${favoriteViewModel.error}'),
+          backgroundColor: Colors.red[800],
+        ),
+      );
+    }
   }
 
   Widget _buildInfoSection(String title, String content) {

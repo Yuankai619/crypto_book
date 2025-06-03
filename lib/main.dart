@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'views/home_page.dart';
 import 'viewModels/crypto_view_model.dart';
 import 'viewModels/auth_view_model.dart';
+import 'viewModels/favorite_view_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => CryptoViewModel()),
         ChangeNotifierProvider(create: (context) => AuthViewModel()),
+        ChangeNotifierProvider(create: (context) => FavoriteViewModel()),
       ],
       child: MyApp(),
     ),

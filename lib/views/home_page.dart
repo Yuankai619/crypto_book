@@ -7,6 +7,7 @@ import 'detail_page.dart';
 import 'category_detail_page.dart';
 import 'auth/login_page.dart';
 import '../viewModels/auth_view_model.dart';
+import 'favorites_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -69,6 +70,17 @@ class HomePageState extends State<HomePage> {
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.favorite),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FavoritesPage()),
+                );
+              },
+            ),
+          ],
           bottom: TabBar(tabs: [Tab(text: '全部'), Tab(text: '類別')]),
         ),
         body: TabBarView(
