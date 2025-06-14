@@ -9,6 +9,7 @@ import 'auth/login_page.dart';
 import '../viewModels/auth_view_model.dart';
 import 'favorites_page.dart';
 import 'user_info_page.dart';
+import 'ai_chat_page.dart';
 import '../viewModels/user_info_view_model.dart';
 
 class HomePage extends StatefulWidget {
@@ -108,7 +109,7 @@ class HomePageState extends State<HomePage>
                   child:
                       hasAvatar
                           ? Image.network(
-                            user!.avatar!,
+                            user.avatar!,
                             width: 28,
                             height: 28,
                             fit: BoxFit.cover,
@@ -158,6 +159,16 @@ class HomePageState extends State<HomePage>
                 }
               });
             },
+          ),
+          IconButton(
+            icon: Icon(Icons.smart_toy),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AiChatPage()),
+              );
+            },
+            tooltip: 'AI 投資顧問',
           ),
           IconButton(
             icon: Icon(Icons.favorite),

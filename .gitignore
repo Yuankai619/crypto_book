@@ -48,3 +48,4 @@ firebase.json
 android/app/google-services.json
 android/app/src/google-services.json
 android/app/src/main/res/values/strings.xml
+.env
