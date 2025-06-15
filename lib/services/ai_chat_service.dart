@@ -7,17 +7,42 @@ class AiChatService {
   static const String _baseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
-  final String _apiKey = dotenv.env['LLM_API_KEY']!;
+  late final String _apiKey;
+
+  AiChatService() {
+    try {
+      // Check if dotenv is loaded
+      if (!dotenv.isInitialized) {
+        throw Exception(
+          'Environment variables not initialized. Please ensure dotenv.load() is called in main.dart',
+        );
+      }
+
+      // Safe initialization of API key
+      final apiKey = dotenv.env['LLM_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception(
+          'LLM_API_KEY not found in environment variables. Please check your .env file.',
+        );
+      }
+      _apiKey = apiKey;
+    } catch (e) {
+      // Handle NotInitializedError and other dotenv errors
+      if (e.toString().contains('NotInitializedError')) {
+        throw Exception(
+          'Environment variables not loaded. Please ensure dotenv.load() is called in main.dart before using AI services.',
+        );
+      }
+      rethrow;
+    }
+  }
+
   Future<String> sendMessage(
     String message,
     List<CryptoCurrency> cryptoData,
   ) async {
+    print("apiKey: ${_apiKey.isNotEmpty ? '***' : 'empty'}");
     try {
-      // Check if API key is set
-      if (_apiKey.isEmpty) {
-        return '請先設定 Google Gemini API 金鑰。請在 ai_chat_service.dart 檔案中將 YOUR_GEMINI_API_KEY 替換為您的實際 API 金鑰。';
-      }
-
       // Prepare crypto context for AI
       String cryptoContext = _prepareCryptoContext(cryptoData);
 
@@ -91,7 +116,8 @@ $cryptoContext
       }
     } catch (e) {
       print('Error calling Gemini API: $e');
-      return '抱歉，發生網路錯誤。請檢查網路連線並稍後再試。';
+      // Instead of throwing error, return a helpful fallback response
+      throw Exception('AI服務連線失敗: $e');
     }
   }
 

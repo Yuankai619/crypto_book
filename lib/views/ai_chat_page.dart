@@ -50,7 +50,7 @@ class _AiChatPageState extends State<AiChatPage> {
           children: [
             Icon(Icons.smart_toy, color: Colors.blue),
             SizedBox(width: 8),
-            Text('AI 投資顧問'),
+            Text('Crypto AI 智慧顧問'),
           ],
         ),
         backgroundColor: Colors.grey[850],
@@ -217,6 +217,16 @@ class _AiChatPageState extends State<AiChatPage> {
                           blockquote: TextStyle(
                             color: Colors.grey[300],
                             fontStyle: FontStyle.italic,
+                          ),
+                          blockquoteDecoration: BoxDecoration(
+                            color:
+                                Colors.transparent, // Remove background color
+                            border: Border(
+                              left: BorderSide(
+                                color: Colors.grey[600]!,
+                                width: 4,
+                              ),
+                            ),
                           ),
                           listBullet: TextStyle(color: Colors.white),
                           tableHead: TextStyle(
